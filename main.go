@@ -1,9 +1,9 @@
 package main
 
 import (
-	
+	"bytes"
 	"log"
-
+	"time"
 
 	"github.com/manhleduy/foreverstore/p2p"
 )
@@ -38,9 +38,16 @@ func main() {
 	go func(){
 		log.Fatal(s1.Start())
 	}()
-	s2.Start()
+
+	time.Sleep(1* time.Second)
+
+	go s2.Start()
+	time.Sleep(1* time.Second)
+
 	
+	data:= bytes.NewReader([]byte("my big data file here!"))
+	s2.StoreData("myprivatedata", data)
 	
-	
+	select{}
 
 }
