@@ -23,8 +23,9 @@ func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 		outbound: outbound,
 	}
 }
-//close implement the peer interface
+// Close implement the peer interface
 func (p *TCPPeer) Close() error{
+
 	return p.conn.Close()
 } 
 
@@ -42,6 +43,7 @@ type TCPTransport struct {
 }
 //close implements the Transport interface
 func (t *TCPTransport) Close()error{
+
 	return t.listener.Close()
 }
 func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
@@ -71,7 +73,7 @@ func (t *TCPTransport) startAcceptLoop() {
 		}
 		fmt.Printf("new incoming connection %+v\n", conn)
 
-		go t.handleConn(conn)
+		go t.handleConn(conn,false)
 	}
 
 }
@@ -90,9 +92,10 @@ func (t *TCPTransport) ListenAndAccept() error {
 	return nil
 }
 
-func (t *TCPTransport) handleConn(conn net.Conn) {
+func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	var err error
-	peer := NewTCPPeer(conn, true)
+	peer := NewTCPPeer(conn, outbound)
+
 	defer func(){
 		fmt.Printf("dropping peer connection: %s", err )
 		conn.Close()
@@ -121,5 +124,17 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 		
 	}
 
+}
+//Dial implement the transport interface
+func (t *TCPTransport) Dial(addr string) error {
+	conn, err := net.Dial("tcp", addr)
+	if err != nil{
+		return err
+	}
+	
+	go t.handleConn(conn, true)
+
+
+	return nil
 }
 
