@@ -7,11 +7,12 @@ import (
 
 	"github.com/manhleduy/foreverstore/p2p"
 )
-func makeServer(listenAddr string, root string, nodes ...string) *FileServer{
+func makeServer(listenAddr string, nodes ...string) *FileServer{
 	tcpTransportOpts := p2p.TCPTransportOpts{
 		ListenAddr: listenAddr,
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		Decoder: p2p.DefaultDecoder{},
+		
 		
 		//TODO: onPeer func
 	}
@@ -24,8 +25,10 @@ func makeServer(listenAddr string, root string, nodes ...string) *FileServer{
 		Transport:  tcpTransport,
 		BootstrapNodes: nodes,
 	}
-	return  NewFileServer(fileServerOpts)
 	
+	s:=  NewFileServer(fileServerOpts)
+	tcpTransport.OnPeer = s.OnPeer
+	return s
 }
 
 func main() {
