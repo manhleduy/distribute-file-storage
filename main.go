@@ -12,9 +12,7 @@ func makeServer(listenAddr string, nodes ...string) *FileServer{
 		ListenAddr: listenAddr,
 		HandshakeFunc: p2p.NOPHandshakeFunc,
 		Decoder: p2p.DefaultDecoder{},
-		
-		
-		//TODO: onPeer func
+
 	}
 	tcpTransport := p2p.NewTCPTransport(tcpTransportOpts)
 
@@ -39,7 +37,7 @@ func main() {
 		log.Fatal(s1.Start())
 	}()
 
-	time.Sleep(1* time.Second)
+	time.Sleep(4* time.Second)
 
 	go s2.Start()
 	time.Sleep(1* time.Second)

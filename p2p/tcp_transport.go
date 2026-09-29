@@ -1,6 +1,7 @@
 package p2p
 
 import (
+
 	"errors"
 	"fmt"
 	"log"
@@ -17,12 +18,14 @@ type TCPPeer struct {
 	outbound bool
 }
 
+
 func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 	return &TCPPeer{
 		Conn:     conn,
 		outbound: outbound,
 	}
 }
+
 
 func (p *TCPPeer) Send(b []byte) error{
 	_, err := p.Conn.Write(b)
@@ -52,12 +55,15 @@ func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
 
 	}
 }
+
 //consume the inplementf the Transport interface, which will retrun read-only channel
 // for reading the incoming messages received from another peer in the network
 func (t *TCPTransport) Consume() <- chan RPC {
-
 	return t.rpcch
 }
+
+
+
 
 func (t *TCPTransport) startAcceptLoop() {
 	for {
@@ -93,12 +99,14 @@ func (t *TCPTransport) ListenAndAccept() error {
 
 func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	var err error
-	peer := NewTCPPeer(conn, outbound)
 
 	defer func(){
 		fmt.Printf("dropping peer connection: %s", err )
 		conn.Close()
 	}()
+	peer := NewTCPPeer(conn, outbound)
+
+	
 	if err := t.HandshakeFunc(peer); err != nil {
 		
 		return
@@ -110,8 +118,9 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	}
 
 	// Read Loop
-	rpc := RPC{}
 	for {
+		rpc := RPC{}
+
 		err := t.Decoder.Decode(conn, &rpc)
 	
 		if err != nil {
@@ -136,4 +145,5 @@ func (t *TCPTransport) Dial(addr string) error {
 
 	return nil
 }
+
 

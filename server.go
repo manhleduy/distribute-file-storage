@@ -16,6 +16,7 @@ type FileServerOpts struct {
 	PathTransfromFunc 	PathTransformFunc
 	Transport           p2p.Transport
 	BootstrapNodes 		[]string
+
 }
 
 
@@ -24,6 +25,7 @@ type FileServer struct {
 
 	peerLock	sync.Mutex
 	peers map[string]p2p.Peer
+
 	store *Store
 	quitch chan struct {}
 }
@@ -40,11 +42,15 @@ func NewFileServer(opts FileServerOpts) *FileServer {
 		peers: make(map[string]p2p.Peer),
 	}
 }
-type Payload struct{
+type Message struct {
+	From 	string
+	Payload any
+}
+type DataMessage struct{
 	Key 	string
 	Data 	[]byte
 }
-func (s *FileServer) broadcast(p *Payload) error{
+func (s *FileServer) broadcast(p *Message) error{
 	peers := []io.Writer{}
 
 	for _, peer := range s.peers{
@@ -57,22 +63,20 @@ func (s *FileServer) broadcast(p *Payload) error{
 
 func (s *FileServer) StoreData(key string, r io.Reader)error{
 	// 1. Store this file to disk
-	
-	if err := s.store.Write(key, r); err != nil{
-		return err
-	}
-
 	buf := new(bytes.Buffer)
-	_, err := io.Copy(buf, r)
-	if err !=nil{
+	msg := Message{
+		Payload: []byte("storagekey"),
+	}
+	if err := gob.NewEncoder(buf).Encode(msg); err != nil{
 		return err
 	}
-	p := &Payload{
-		Key: key,
-		Data: buf.Bytes(),
+	for _, peer := range s.peers{
+		if err := peer.Send(buf.Bytes()); err != nil{
+			return err
+		}
 	}
-	fmt.Println(buf.Bytes())
-	return s.broadcast(p)
+	return nil
+	
 }
 func (s *FileServer) Stop(){
 	close(s.quitch)
@@ -93,8 +97,17 @@ func (s *FileServer) loop(){
 	}()
 	for{
 		select{
-		case msg := <- s.Transport.Consume():
-			fmt.Println(msg)
+			
+		case rpc := <- s.Transport.Consume():
+			
+			var m Message
+			if err := gob.NewDecoder(bytes.NewReader(rpc.Payload)).Decode(&m); err != nil{
+				log.Fatal(err)
+			}
+			fmt.Printf("recv: %s", string(m.Payload.([]byte)))
+			
+
+
 		case <- s.quitch:
 			return
 
@@ -131,5 +144,7 @@ func (s *FileServer) Start()error {
 
 	return nil
 }
+
+
 
 
